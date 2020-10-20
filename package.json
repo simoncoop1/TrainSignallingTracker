@@ -1,0 +1,15 @@
+{
+  "name": "train-feed",
+  "version": "1.0.0",
+  "description": "an example",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "prettyjson": "^1.2.1",
+    "stomp-client": "^0.9.0"
+  }
+}
