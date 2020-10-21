@@ -1,11 +1,20 @@
 var prettyjson = require('prettyjson'),
-        StompClient = require('stomp-client').StompClient;
+    StompClient = require('stomp-client').StompClient;
 
-const email = require('psswd.js').email;
-const password =  require('psswd.js').password;
+const email = require('./psswd').email;
+const password =  require('./psswd').password;
 
 var destination = '/topic/TD_MC_EM_SIG_AREA',
         client = new StompClient('datafeeds.networkrail.co.uk', 61618, email, password, '1.0');
+
+const train_describers = {
+    "LR":"EMCC Leicester Area WestCAD",
+    "MD":"EMCC Mansfield",               
+    "NE":"EMCC North Erewash Area WestCAD",
+    "NM":"EMCC Nottingham WestCAD",               
+    "TN":"EMCC Chesterfield Area WestCAD",          
+    "WH":"West Hampstead PSB"}                           
+
 
 let data = [ { SF_MSG:
          { time: '1603204816000',
@@ -28,6 +37,13 @@ let data = [ { SF_MSG:
       { CA_MSG:
                { to: '4847',
                           time: '1603204818000',
+                          area_id: 'TN',
+                          msg_type: 'CA',
+                          from: '4845',
+                          descr: '1F40' } },
+      { CA_MSG:
+               { to: '4847',
+                          time: '1603204918000',
                           area_id: 'TN',
                           msg_type: 'CA',
                           from: '4845',
@@ -117,27 +133,91 @@ let data = [ { SF_MSG:
                           from: '0253',
                           descr: '9O44' } } ];
 
-let arr = data.filter(x => {
-    if(x.hasOwnProperty('CA_MSG')){
-        return true
-    }
 
-});
 
-console.log(arr);
 
+signalsCount = {date:new Date(),count:{}}
+
+const updateSignalSteps = (data) =>{
+
+    let arr = data.filter(x => {
+            if(x.hasOwnProperty('CA_MSG')&& x['CA_MSG']['msg_type']=='CA'){
+                        return true
+                    }
+    });
+
+
+    arr.forEach(x => {
+            x['CA_MSG']['time'] = new Date(parseInt(x['CA_MSG']['time']));
+            if( train_describers.hasOwnProperty(x['CA_MSG']['area_id'])){
+                        x['CA_MSG']['area_name']= train_describers[x['CA_MSG']['area_id']];
+                    }
+            return x;
+
+        });
+
+    arr.forEach(x => {
+        if(signalsCount['count'].hasOwnProperty(x['CA_MSG']['to'])){
+            signalsCount['count'][x['CA_MSG']['to']] += 1;
+        }
+        else{
+
+            signalsCount['count'][x['CA_MSG']['to']] = 1;
+        }
+    });
+
+    //console.log(arr);
+    
+}
+
+const procSub = (body,headers) =>{
+    updateSignalSteps(JSON.parse(body));
+}
+
+const getTop10SignalSteps = () => {
+    let arr=  Object.keys(signalsCount['count']).sort((a,b) => {
+        return signalsCount['count'][b]-signalsCount['count'][a];
+        
+    });
+    
+    arr = arr.slice(0,10);
+    dic = {};
+
+    arr.forEach(x => {
+        dic[x] = signalsCount['count'][x];
+    });
+
+    return dic;    
+}
+
+updateSignalSteps(data)
+//console.log(prettyjson.render(getTop10SignalSteps()));
+
+const promiseMethod = (resolve, reject) => {
+    setTimeout(() => {
+        console.log(prettyjson.render(getTop10SignalSteps()));
+        console.log(prettyjson.render(""));
+        promiseMethod();
+    },5000);
+}
+
+let myPromise = new Promise(promiseMethod);
+
+
+
+/*
 client.connect(function(sessionId) {
         console.log('Trying to connect...');
         client.subscribe(destination, function(body, headers) {
-
-            
             let arr = JSON.parse(body).filter(x => {
                 if(x.hasOwnProperty('CA_MSG')){
                     return true
                 }
 
             });
+            arr = arr.forEach(x => {
+                x['readable-time'] = new Date(x['time'])
+            });
             console.log(prettyjson.render(arr));
-            //console.log(prettyjson.render(JSON.parse(body)));
         });
-});
+});*/
