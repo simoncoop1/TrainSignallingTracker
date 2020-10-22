@@ -177,21 +177,18 @@ const procSub = (body,headers) =>{
 const getTop10SignalSteps = () => {
     let arr=  Object.keys(signalsCount['count']).sort((a,b) => {
         return signalsCount['count'][b]-signalsCount['count'][a];
-        
     });
     
     arr = arr.slice(0,10);
-    dic = {};
-
-    arr.forEach(x => {
-        dic[x] = signalsCount['count'][x];
+    let arr2 = arr.map(x => {
+         return `${x}  ${signalsCount['count'][x]}`;
     });
 
-    return dic;    
+    return arr2;    
 }
 
+//for test with offline data
 updateSignalSteps(data)
-//console.log(prettyjson.render(getTop10SignalSteps()));
 
 const promiseMethod = (resolve, reject) => {
     setTimeout(() => {
@@ -202,22 +199,7 @@ const promiseMethod = (resolve, reject) => {
 }
 
 let myPromise = new Promise(promiseMethod);
-
-
-
 /*
 client.connect(function(sessionId) {
         console.log('Trying to connect...');
-        client.subscribe(destination, function(body, headers) {
-            let arr = JSON.parse(body).filter(x => {
-                if(x.hasOwnProperty('CA_MSG')){
-                    return true
-                }
-
-            });
-            arr = arr.forEach(x => {
-                x['readable-time'] = new Date(x['time'])
-            });
-            console.log(prettyjson.render(arr));
-        });
-});*/
+        client.subscribe(destination, procSub)});*/
